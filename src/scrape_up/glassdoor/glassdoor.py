@@ -1,6 +1,3 @@
-from bs4 import BeautifulSoup
-import requests
-
 class Glassdoor:
     """
     Create an object for the 'Glassdoor' class :\n
@@ -42,22 +39,21 @@ class Glassdoor:
         - num_pages (int): Number of pages to scrape. Defaults to 5.
 
         Returns:
-        - list: A list of dictionaries representing job listings.
+        - dict: A dictionary with job listings.
         """
         base_url = f"{self.base_url}Job/jobs.htm"
-        job_listings = []
+        job_listings = {}
 
         for page in range(1, num_pages + 1):
             url = f"{base_url}?q={query}&l={location}&p={page}"
             page_content = self.__scrape_page(url)
             if page_content:
                 soup = self.__parse_page(page_content)
-                job_listings.extend(soup.find_all("div", class_="jobContainer"))
+                job_listings[page] = self.__extract_job_details(soup.find_all("div", class_="jobContainer"))
             else:
                 print(f"Failed to fetch content from {url}")
 
-        job_details = self.__extract_job_details(job_listings)
-        return job_details
+        return job_listings
 
     def __extract_job_details(self, job_listings):
         job_details = []
@@ -74,8 +70,18 @@ class Glassdoor:
         return job_details
 
     def internships(self, query, location, num_pages=5):
+        """
+        Fetches the internship listings.\n
+        Args:
+        - query (str): The internship title or keyword to search for.
+        - location (str): The location to search for internships.
+        - num_pages (int): Number of pages to scrape. Defaults to 5.
+
+        Returns:
+        - dict: A dictionary with internship listings.
+        """
         base_url = f"{self.base_url}Job/india-internship-jobs-SRCH_IL.0,5_IN115_KO6,16.htm"
-        internships = []
+        internships = {}
 
         for page in range(1, num_pages + 1):
             url = f"{base_url}?p={page}"
@@ -83,15 +89,14 @@ class Glassdoor:
             if page_content:
                 soup = self.__parse_page(page_content)
                 internship_listings = soup.find_all("li", class_="jl")
+                internships[page] = []
                 for internship in internship_listings:
                     title = internship.find("div", class_="jobTitle").text.strip()
                     company = internship.find("div", class_="jobEmployerName").text.strip()
                     location = internship.find("span", class_="loc").text.strip()
                     stipend = internship.find("div", class_="jobStipend").text.strip()
-                    internships.append({"title": title, "company": company, "location": location, "stipend": stipend})
+                    internships[page].append({"title": title, "company": company, "location": location, "stipend": stipend})
             else:
                 print(f"Failed to fetch content from {url}")
 
         return internships
-
-
